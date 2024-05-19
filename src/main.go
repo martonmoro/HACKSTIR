@@ -293,25 +293,16 @@ func (s *instance) prove(witness Witness) Proof {
 		roundProofs[i] = roundProof
 		WitnessExtended = newWitness
 	}
-	//let final_polynomial = poly_utils::folding::poly_fold(
-	//	&witness.polynomial,
-	//	self.parameters.folding_factor,
-	//	witness.folding_randomness,
-	//);
+
 	_finalPoly := WitnessExtended.p.Coefficients()
 	_finalPoly = foldPolynomialLagrangeBasis(_finalPoly, s.domain.GeneratorInv, WitnessExtended.foldingRandomness)
 	finalPoly := iop.NewPolynomial(&_finalPoly, iop.Form{
 		Basis: iop.Canonical, Layout: iop.Regular})
 
-	//let final_repetitions = self.parameters.repetitions[self.parameters.num_rounds];
 	finalRepetitions := s.repetitions[WitnessExtended.numRounds]
 
-	//let scaling_factor = witness.domain.size() / self.parameters.folding_factor;
 	scalingFactor := witness.domain.Cardinality / s.stirFoldingFactor
 
-	//let final_randomness_indexes = utils::dedup(
-	//	(0..final_repetitions).map(|_| utils::squeeze_integer(&mut sponge, scaling_factor)),
-	//);
 	finalRandomnessIndexes := make([]uint64, finalRepetitions)
 	for i := uint64(0); i < finalRepetitions; i++ {
 		finalRandomnessIndexes[i] = uint64(rand.Int63n(int64(scalingFactor)))
@@ -339,7 +330,7 @@ func (s *instance) prove(witness Witness) Proof {
 		queriesToFinalProof[j] = res
 	}
 	var queriesToFinal QueryToFinal
-	//let queries_to_final = (queries_to_final_ans, queries_to_final_proof);
+
 	queriesToFinal.queriesToFinalAns = queriesToFinalAns
 	queriesToFinal.queriesToFinalProof = queriesToFinalProof
 
@@ -426,20 +417,11 @@ func (s *instance) round(witness WitnessExtended, i int) (WitnessExtended, Round
 	for i := uint64(0); i < numRepetitions; i++ {
 		stirRandomnessIndexes[i] = uint64(rand.Int63n(int64(scalingFactor)))
 	}
-	//let queries_to_prev_ans: Vec<_> = stir_randomness_indexes
-	//        .iter()
-	//        .map(|&index| witness.folded_evals[index].clone())
-	//        .collect();
 
 	queriesToPrevAns := make([][]fr.Element, len(stirRandomnessIndexes))
 	for i, index := range stirRandomnessIndexes {
 		queriesToPrevAns[i] = foldedEvals[index]
 	}
-
-	//let queries_to_prev_proof = witness
-	//        .merkle_tree
-	//        .generate_multi_proof(stir_randomness_indexes.clone())
-	//        .unwrap();
 
 	queriesToPrevProof := make([]fri.OpeningProof, len(stirRandomnessIndexes))
 
@@ -483,6 +465,8 @@ func (s *instance) round(witness WitnessExtended, i int) (WitnessExtended, Round
 	for i, x := range quotientSet {
 		quotientAnswers[i] = [2]fr.Element{x, foldedPoly.Evaluate(x)}
 	}
+
+	// TODO use naive interpolation to get the polynomial
 
 	// Verifier quires
 
